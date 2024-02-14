@@ -41,17 +41,16 @@ async function run() {
 
     // find a document 
 
-    app.get("/users/:id" , async(req , res) => {
-      const id = req.params.id;
-
-      const query = { _id : new ObjectId(id)};
-
+    app.get("/users/:userId" , async(req , res) => {
+      const userId = req.params.userId;
+    
+      const query = { userId };
+    
       const result = await userCollection.findOne(query);
       res.send(result);
+    });
 
-    })
-
-    // to create or post a user or find multiple document (input field e user create korle mongodb e jbe)
+    //  find multiple document 
 
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -61,38 +60,35 @@ async function run() {
       res.send(result);
 
     })
-
-
-    app.put("/users/:id" , async(req , res) => {
-      const id = req.params.id;
+    
+    app.put("/users/:userId" , async(req , res) => {
+      const userId = req.params.userId;
       const user = req.body;
-      console.log( user , id)
-
-      const filter = {_id : new ObjectId(id)};
+    
+      const filter = { userId };
       const options = { upsert: true };
       const updateUser = {
         $set: {
           name : user.name,
-          email : user.email
+          email : user.email,
+          gender: user.gender,
+          password: user.password
         },
       };
-      
-      const result = await userCollection.updateOne(filter , updateUser ,options )
+    
+      const result = await userCollection.updateOne(filter , updateUser ,options );
       res.send(result);
-
-
-    })
-
-
-    app.delete("/users/:id" , async(req , res) => {
-      const id = req.params.id;
-      console.log('delete' , id);
-      const query = { _id : new ObjectId(id)};
-
+    });
+    
+    app.delete("/users/:userId" , async(req , res) => {
+      const userId = req.params.userId;
+    
+      const query = { userId };
+    
       const result = await userCollection.deleteOne(query);
-      res.send(result)
-
-    })
+      res.send(result);
+    });
+    
 
 
     // Send a ping to confirm a successful connection
