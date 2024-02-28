@@ -14,9 +14,6 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); // Parse application/x-www-form-urlencoded
 
-// rakibul29302
-// ZnsFNvhQUGcmklke
-
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
   "mongodb+srv://rakibul29302:ZnsFNvhQUGcmklke@cluster0.y5comcm.mongodb.net/?retryWrites=true&w=majority";
@@ -34,37 +31,40 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    console.log("db connected");
 
     const database = client.db("usersDB");
     const userCollection = database.collection("users");
 
-    // to read or send data to client page (db theke client page a jbe)
-
+    // get all the users informations stored in db
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // find a document
-
+    // find a user based on userId property
     app.get("/users/:userId", async (req, res) => {
       const userId = req.params.userId;
-
       const query = { userId };
-
       const result = await userCollection.findOne(query);
-      res.send(result);
+      if (result) res.send(result);
+      else {
+        res.status(404).send({
+          status: false,
+          message: "User Not Found!!!",
+        });
+      }
     });
 
-    //  find multiple document
-
+    //  add an user/insert an user
     app.post("/users", async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
 
+    //update an user's informations
     app.put("/users/:userId", async (req, res) => {
       const userId = req.params.userId;
       const user = req.body;
@@ -88,6 +88,7 @@ async function run() {
       res.send(result);
     });
 
+    //delete an user's informations
     app.delete("/users/:userId", async (req, res) => {
       const userId = req.params.userId;
 
@@ -99,6 +100,7 @@ async function run() {
 
     // Endpoint for receiving data from NodeMCU
     app.post("/data", (req, res) => {
+      console.log("called");
       const newData = req.body;
       // Emit an event to notify connected clients about new data
       eventEmitter.emit("newData", newData); //to client side
@@ -112,7 +114,7 @@ async function run() {
       res.setHeader("Connection", "keep-alive");
 
       const listener = (newData) => {
-        res.write(`data: ${JSON.stringify(newData)}\n\n`);
+        res.send(`data: ${JSON.stringify(newData)}\n\n`);
       };
 
       eventEmitter.on("newData", listener);
