@@ -15,8 +15,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true })); // Parse application/x-www-form-urlencoded
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri =
-  "mongodb+srv://rakibul29302:ZnsFNvhQUGcmklke@cluster0.y5comcm.mongodb.net/?retryWrites=true&w=majority";
+const uri = "mongodb://localhost:27017";
+// const uri =
+//   "mongodb+srv://rakibul29302:ZnsFNvhQUGcmklke@cluster0.y5comcm.mongodb.net/?retryWrites=true&w=majority";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -33,8 +34,8 @@ async function run() {
     await client.connect();
     console.log("db connected");
 
-    const database = client.db("usersDB");
-    const userCollection = database.collection("users");
+    const database = client.db("attendanceDB");
+    const userCollection = database.collection("allUsers");
 
     // get all the users informations stored in db
     app.get("/users", async (req, res) => {
@@ -98,9 +99,16 @@ async function run() {
       res.send(result);
     });
 
+    //insert attendance data
+    app.post("/attendance", async (req, res) => {
+      const data = req.body;
+      const collection = database.collection(data.courseCode);
+      const result = await collection.insertOne(data);
+      res.send(result);
+    });
+
     // Endpoint for receiving data from NodeMCU
     app.post("/data", (req, res) => {
-      console.log("called");
       const newData = req.body;
       // Emit an event to notify connected clients about new data
       eventEmitter.emit("newData", newData); //to client side
