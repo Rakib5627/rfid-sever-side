@@ -100,19 +100,58 @@ async function run() {
     });
 
     //insert attendance data
-    app.post("/attendance", async (req, res) => {
+    // app.post("/attendance", async (req, res) => {
+    //   const data = req.body;
+    //   const collection = database.collection(data.courseCode);
+    //   const result = await collection.insertOne(data);
+    //   res.send(result);
+    // });
+    app.patch("/attendance", async (req, res) => {
       const data = req.body;
+      // console.log(data);
       const collection = database.collection(data.courseCode);
-      const result = await collection.insertOne(data);
+      const result = await collection.updateOne(
+        { date: data.date, courseCode: data.courseCode },
+        { $addToSet: { presentIds: { $each: data.presentIds } } },
+        { upsert: true }
+      );
+      res.send(result);
+    });
+
+    app.post("/insertManually", async (req, res) => {
+      const data = req.body;
+      // console.log(data);
+      const collection = database.collection(data.courseCode);
+      const result = await collection.updateOne(
+        { date: data.date, courseCode: data.courseCode },
+        { $addToSet: { presentIds: { $each: data.presentIds } } }
+      );
       res.send(result);
     });
 
     // Endpoint for receiving data from NodeMCU
-    app.post("/data", (req, res) => {
-      const newData = req.body;
+    app.post("/data", async (req, res) => {
+      let newData = req.body;
+      // console.log(newData);
+
       // Emit an event to notify connected clients about new data
+      const result = await userCollection.findOne({
+        userId: newData.UIDresult,
+      });
+      if (result) {
+        newData = { ...newData, status: result.status };
+      }
       eventEmitter.emit("newData", newData); //to client side
-      res.sendStatus(200); //to nodeMCU
+      // console.log(result && result.status);
+      if (!result) {
+        return res.sendStatus(404); //to nodeMCU
+      } else if (result.status == "valid") {
+        return res.sendStatus(200); //to nodeMCU
+      } else if (result.status == "invalid") {
+        return res.sendStatus(400); //to nodeMCU
+      } else {
+        return res.sendStatus(403); //to nodeMCU
+      }
     });
 
     // Endpoint for clients to subscribe to real-time updates
@@ -144,3 +183,13 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`server running on port : ${port}`);
 });
+
+// db.getCollection("EEE-102").aggregate([
+//   { $match: { date: "2024-03-05" } },
+//   {
+//     $addFields: {
+//       totalAttend: { $size: "$presentIds" }
+//     }
+//   },
+//   { $out: "EEE-102" }
+// ])
